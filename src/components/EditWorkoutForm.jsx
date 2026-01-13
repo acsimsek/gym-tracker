@@ -17,7 +17,8 @@ function EditWorkoutForm({ workout, onSave, onCancel }) {
     if (machines.length > 1) {
       setMachines(machines.filter((_, i) => i !== index))
     } else {
-      alert('At least one machine entry is required')
+      setMessage('❌ At least one machine entry is required')
+      setTimeout(() => setMessage(''), 3000)
     }
   }
 
@@ -35,9 +36,9 @@ function EditWorkoutForm({ workout, onSave, onCancel }) {
     try {
       // Validate machines
       const validMachines = machines.filter(m => 
-        m.name && m.weight != null && m.weight !== '' && 
-        m.sets != null && m.sets !== '' && 
-        m.reps != null && m.reps !== ''
+        m.name && m.weight !== '' && 
+        m.sets !== '' && 
+        m.reps !== ''
       )
 
       if (validMachines.length === 0) {
