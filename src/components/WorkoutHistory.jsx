@@ -73,10 +73,17 @@ function WorkoutHistory({ refreshTrigger, onWorkoutDeleted }) {
         {workouts.map((workout) => {
           const isExpanded = expandedWorkout === workout.id
           let workoutDate
-          try {
-            workoutDate = workout.date ? format(parseISO(workout.date), 'MMMM dd, yyyy') : 'Unknown date'
-          } catch {
-            workoutDate = workout.date || 'Unknown date'
+          // Handle date parsing with specific error handling
+          if (workout.date) {
+            try {
+              const parsedDate = parseISO(workout.date)
+              workoutDate = format(parsedDate, 'MMMM dd, yyyy')
+            } catch (error) {
+              // If date parsing fails, use the raw date string
+              workoutDate = workout.date
+            }
+          } else {
+            workoutDate = 'Unknown date'
           }
 
           return (

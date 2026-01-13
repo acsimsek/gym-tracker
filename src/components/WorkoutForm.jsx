@@ -36,7 +36,9 @@ function WorkoutForm({ onWorkoutAdded }) {
     try {
       // Validate machines
       const validMachines = machines.filter(m => 
-        m.name && m.weight && m.sets && m.reps
+        m.name && m.weight != null && m.weight !== '' && 
+        m.sets != null && m.sets !== '' && 
+        m.reps != null && m.reps !== ''
       )
 
       if (validMachines.length === 0) {

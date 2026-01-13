@@ -105,7 +105,7 @@ function ProgressChart({ refreshTrigger }) {
   const machineNames = Object.keys(stats.machineUses)
   const avgWeightPerMachine = machineNames.map(name => {
     const { count, totalWeight } = stats.machineUses[name]
-    return count > 0 ? totalWeight / count : 0
+    return totalWeight / count
   })
 
   const avgWeightPerMachineData = {
