@@ -4,6 +4,7 @@ A modern, responsive web application for tracking your weight lifting workouts, 
 
 ## ✨ Features
 
+- **🔐 User Authentication**: Secure login with Email/Password (no sign-up - admin managed users)
 - **Add Workouts**: Log your workouts with date, multiple machines, settings, weight, sets, and reps
 - **View History**: Browse all past workouts with detailed breakdowns and the ability to delete entries
 - **Progress Charts**: Visualize your progress with:
@@ -18,6 +19,7 @@ A modern, responsive web application for tracking your weight lifting workouts, 
 
 - **Frontend**: React 18 with Vite
 - **Styling**: Tailwind CSS
+- **Authentication**: Firebase Authentication (Email/Password)
 - **Database**: Firebase Firestore
 - **Charts**: Chart.js with react-chartjs-2
 - **Date Handling**: date-fns
@@ -52,7 +54,14 @@ npm install
    - Click "Create database"
    - Choose "Start in test mode" for development (remember to update security rules for production)
    - Select a location and click "Enable"
-4. Get your Firebase configuration:
+4. Enable Email/Password Authentication:
+   - Go to "Build" > "Authentication"
+   - Click "Get started"
+   - Go to "Sign-in method" tab
+   - Click on "Email/Password"
+   - Enable the "Email/Password" provider (NOT "Email link")
+   - Click "Save"
+5. Get your Firebase configuration:
    - Go to Project Settings (⚙️ icon)
    - Scroll down to "Your apps" section
    - Click the web icon (</>) to add a web app
@@ -77,7 +86,26 @@ VITE_FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id_here
 VITE_FIREBASE_APP_ID=your_app_id_here
 ```
 
-### 5. Run Development Server
+### 5. Create User Accounts
+
+The app uses Firebase Authentication with **Email/Password** sign-in. Users cannot sign up themselves - accounts must be created manually by an administrator.
+
+**To create a user account:**
+
+1. Go to [Firebase Console](https://console.firebase.google.com/)
+2. Select your project
+3. Go to "Build" > "Authentication" > "Users" tab
+4. Click "Add user"
+5. Enter the user's email and password
+6. Click "Add user"
+
+**Notes:**
+- There is no sign-up functionality in the app for security reasons
+- All users are created and managed through the Firebase Console
+- Each user's workouts are automatically associated with their user ID
+- Users can only see and manage their own workouts
+
+### 6. Run Development Server
 
 ```bash
 npm run dev
@@ -177,20 +205,45 @@ For typical personal use (logging 1-2 workouts per day), this app will remain **
 
 ## 🔒 Security Notes
 
-**Important**: The current Firestore configuration uses test mode for development. Before deploying to production, update your Firestore security rules:
+### Authentication
+
+This app uses Firebase Authentication with Email/Password sign-in:
+- **No sign-up functionality** - Users must be created manually in Firebase Console
+- Login screen protects all workout features
+- Users are automatically logged out when closing the browser (session-based)
+
+### Firestore Security Rules
+
+**Important**: Update your Firestore security rules to require authentication. Replace the default test mode rules with:
 
 ```javascript
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     match /workouts/{workout} {
-      // Adjust these rules based on your authentication setup
-      allow read, write: if true; // For now, anyone can read/write
-      // For production, consider implementing Firebase Authentication
+      // Only authenticated users can read/write their own workouts
+      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+      // Allow creating new workouts with the user's own userId
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
     }
   }
 }
 ```
+
+**To update security rules:**
+1. Go to [Firebase Console](https://console.firebase.google.com/)
+2. Select your project
+3. Go to "Build" > "Firestore Database"
+4. Click on "Rules" tab
+5. Replace the rules with the above configuration
+6. Click "Publish"
+
+### Best Practices
+
+- Create strong passwords for user accounts
+- Regularly review user access in Firebase Console
+- Keep your `.env` file secure and never commit it to version control
+- Consider enabling 2FA for your Firebase account
 
 ## 📱 Screenshots
 
