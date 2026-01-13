@@ -2,11 +2,13 @@ import { useState, useEffect } from 'react'
 import { collection, query, orderBy, getDocs, deleteDoc, doc } from 'firebase/firestore'
 import { db } from '../firebase'
 import { format, parseISO } from 'date-fns'
+import EditWorkoutForm from './EditWorkoutForm'
 
 function WorkoutHistory({ refreshTrigger, onWorkoutDeleted }) {
   const [workouts, setWorkouts] = useState([])
   const [loading, setLoading] = useState(true)
   const [expandedWorkout, setExpandedWorkout] = useState(null)
+  const [editingWorkout, setEditingWorkout] = useState(null)
 
   useEffect(() => {
     fetchWorkouts()
@@ -46,6 +48,24 @@ function WorkoutHistory({ refreshTrigger, onWorkoutDeleted }) {
 
   const toggleExpand = (workoutId) => {
     setExpandedWorkout(expandedWorkout === workoutId ? null : workoutId)
+  }
+
+  const handleEdit = (workout, e) => {
+    e.stopPropagation()
+    setEditingWorkout(workout.id)
+    setExpandedWorkout(workout.id) // Also expand the workout
+  }
+
+  const handleEditSave = () => {
+    setEditingWorkout(null)
+    fetchWorkouts() // Refresh the list
+    if (onWorkoutDeleted) {
+      onWorkoutDeleted() // Trigger refresh in parent (for progress chart)
+    }
+  }
+
+  const handleEditCancel = () => {
+    setEditingWorkout(null)
   }
 
   if (loading) {
@@ -105,6 +125,12 @@ function WorkoutHistory({ refreshTrigger, onWorkoutDeleted }) {
                   </div>
                   <div className="flex items-center gap-2">
                     <button
+                      onClick={(e) => handleEdit(workout, e)}
+                      className="text-blue-300 hover:text-blue-100 px-3 py-1 rounded"
+                    >
+                      ✏️
+                    </button>
+                    <button
                       onClick={(e) => {
                         e.stopPropagation()
                         handleDelete(workout.id)
@@ -123,34 +149,42 @@ function WorkoutHistory({ refreshTrigger, onWorkoutDeleted }) {
               {/* Expanded Details */}
               {isExpanded && (
                 <div className="px-4 pb-4 border-t border-white/20">
-                  <div className="mt-4 space-y-3">
-                    {workout.machines?.map((machine, index) => (
-                      <div key={index} className="bg-white/10 rounded-lg p-3">
-                        <div className="text-white font-semibold mb-2">
-                          🏋️ {machine.name}
-                        </div>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
-                          {machine.settings && (
+                  {editingWorkout === workout.id ? (
+                    <EditWorkoutForm
+                      workout={workout}
+                      onSave={handleEditSave}
+                      onCancel={handleEditCancel}
+                    />
+                  ) : (
+                    <div className="mt-4 space-y-3">
+                      {workout.machines?.map((machine, index) => (
+                        <div key={index} className="bg-white/10 rounded-lg p-3">
+                          <div className="text-white font-semibold mb-2">
+                            🏋️ {machine.name}
+                          </div>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+                            {machine.settings && (
+                              <div className="text-white/80">
+                                ⚙️ {machine.settings}
+                              </div>
+                            )}
                             <div className="text-white/80">
-                              ⚙️ {machine.settings}
+                              ⚖️ {machine.weight} kg
                             </div>
-                          )}
-                          <div className="text-white/80">
-                            ⚖️ {machine.weight} kg
+                            <div className="text-white/80">
+                              📊 {machine.sets} sets
+                            </div>
+                            <div className="text-white/80">
+                              🔢 {machine.reps} reps
+                            </div>
                           </div>
-                          <div className="text-white/80">
-                            📊 {machine.sets} sets
-                          </div>
-                          <div className="text-white/80">
-                            🔢 {machine.reps} reps
+                          <div className="text-white/60 text-xs mt-2">
+                            Total: {(machine.weight * machine.sets * machine.reps).toFixed(1)} kg
                           </div>
                         </div>
-                        <div className="text-white/60 text-xs mt-2">
-                          Total: {(machine.weight * machine.sets * machine.reps).toFixed(1)} kg
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
