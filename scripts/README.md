@@ -76,7 +76,7 @@ Your CSV file should have the following columns:
 workout name,workout settings,date,weight kg,sets,reps
 chest press,6,2024-06-09,22,2,10
 seated row,"s 5, c 6",2024-06-09,34,2,10
-chin asist,,2024-06-09,1000/32,2,10
+chin assist,,2024-06-09,1000/32,2,10
 leg press,5,2024-06-09,50,3,12
 shoulder press,4,2024-06-15,18,2,10
 ```
