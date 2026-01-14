@@ -116,8 +116,12 @@ function ProgressChart({ refreshTrigger }) {
         data: workouts.map(w => {
           // Calculate average weight across all machines for this workout
           if (!w.machines || w.machines.length === 0) return 0
-          const totalWeight = w.machines.reduce((sum, m) => sum + (parseFloat(m.weight) || 0), 0)
-          return totalWeight / w.machines.length
+          const validWeights = w.machines
+            .map(m => parseFloat(m.weight))
+            .filter(weight => !isNaN(weight) && weight > 0)
+          if (validWeights.length === 0) return 0
+          const totalWeight = validWeights.reduce((sum, weight) => sum + weight, 0)
+          return totalWeight / validWeights.length
         }),
         backgroundColor: 'rgba(59, 130, 246, 0.7)',
         borderColor: 'rgb(59, 130, 246)',
