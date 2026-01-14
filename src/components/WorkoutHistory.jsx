@@ -1,27 +1,23 @@
-import { useState, useEffect, useCallback } from 'react'
-import { collection, query, orderBy, getDocs, deleteDoc, doc, where } from 'firebase/firestore'
+import { useState, useEffect } from 'react'
+import { collection, query, orderBy, getDocs, deleteDoc, doc } from 'firebase/firestore'
 import { db } from '../firebase'
 import { format, parseISO } from 'date-fns'
 import EditWorkoutForm from './EditWorkoutForm'
-import { usePlan } from '../contexts/PlanContext'
 
 function WorkoutHistory({ refreshTrigger, onWorkoutDeleted }) {
   const [workouts, setWorkouts] = useState([])
   const [loading, setLoading] = useState(true)
   const [expandedWorkout, setExpandedWorkout] = useState(null)
   const [editingWorkout, setEditingWorkout] = useState(null)
-  const { selectedPlan } = usePlan()
 
-  const fetchWorkouts = useCallback(async () => {
-    if (!selectedPlan) return;
-    
+  useEffect(() => {
+    fetchWorkouts()
+  }, [refreshTrigger])
+
+  const fetchWorkouts = async () => {
     setLoading(true)
     try {
-      const q = query(
-        collection(db, 'workouts'),
-        where('planId', '==', selectedPlan.id),
-        orderBy('date', 'desc')
-      )
+      const q = query(collection(db, 'workouts'), orderBy('date', 'desc'))
       const querySnapshot = await getDocs(q)
       const workoutData = querySnapshot.docs.map(doc => ({
         id: doc.id,
@@ -33,11 +29,7 @@ function WorkoutHistory({ refreshTrigger, onWorkoutDeleted }) {
     } finally {
       setLoading(false)
     }
-  }, [selectedPlan])
-
-  useEffect(() => {
-    fetchWorkouts()
-  }, [fetchWorkouts, refreshTrigger])
+  }
 
   const handleDelete = async (workoutId) => {
     if (window.confirm('Are you sure you want to delete this workout?')) {
