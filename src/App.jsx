@@ -3,12 +3,17 @@ import WorkoutForm from './components/WorkoutForm'
 import WorkoutHistory from './components/WorkoutHistory'
 import ProgressChart from './components/ProgressChart'
 import Login from './components/Login'
+import PlanSelector from './components/PlanSelector'
+import PlanManager from './components/PlanManager'
 import { useAuth } from './contexts/AuthContext'
+import { usePlans } from './contexts/PlanContext'
 
 function App() {
   const [activeTab, setActiveTab] = useState('add')
   const [refreshTrigger, setRefreshTrigger] = useState(0)
+  const [showPlanManager, setShowPlanManager] = useState(false)
   const { user, logout } = useAuth()
+  const { plans, selectedPlan } = usePlans()
 
   const handleWorkoutAdded = () => {
     setRefreshTrigger(prev => prev + 1)
@@ -40,6 +45,7 @@ function App() {
           </h1>
           
           <div className="flex flex-col sm:flex-row items-center gap-3">
+            <PlanSelector onManagePlans={() => setShowPlanManager(true)} />
             <span className="text-white/80 text-sm">
               {user.email}
             </span>
@@ -88,15 +94,41 @@ function App() {
 
         {/* Tab Content */}
         <div className="card-glass rounded-xl p-6 md:p-8">
-          {activeTab === 'add' && <WorkoutForm onWorkoutAdded={handleWorkoutAdded} />}
-          {activeTab === 'history' && (
-            <WorkoutHistory 
-              refreshTrigger={refreshTrigger} 
-              onWorkoutDeleted={handleWorkoutDeleted}
-            />
+          {plans.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="text-white text-2xl mb-4">🏋️ Welcome to Gym Tracker!</div>
+              <div className="text-white/70 mb-6">Create your first workout plan to get started</div>
+              <button
+                onClick={() => setShowPlanManager(true)}
+                className="px-8 py-4 rounded-lg bg-green-500 text-white hover:bg-green-600 transition-all font-semibold text-lg shadow-lg"
+              >
+                ➕ Create Your First Plan
+              </button>
+            </div>
+          ) : !selectedPlan ? (
+            <div className="text-center py-12">
+              <div className="text-white text-xl mb-4">📋 Please select a plan</div>
+              <div className="text-white/70">Select a plan from the dropdown above to continue</div>
+            </div>
+          ) : (
+            <>
+              {activeTab === 'add' && <WorkoutForm onWorkoutAdded={handleWorkoutAdded} />}
+              {activeTab === 'history' && (
+                <WorkoutHistory 
+                  refreshTrigger={refreshTrigger} 
+                  onWorkoutDeleted={handleWorkoutDeleted}
+                />
+              )}
+              {activeTab === 'progress' && <ProgressChart refreshTrigger={refreshTrigger} />}
+            </>
           )}
-          {activeTab === 'progress' && <ProgressChart refreshTrigger={refreshTrigger} />}
         </div>
+
+        {/* Plan Manager Modal */}
+        <PlanManager
+          isOpen={showPlanManager}
+          onClose={() => setShowPlanManager(false)}
+        />
       </div>
     </div>
   )
