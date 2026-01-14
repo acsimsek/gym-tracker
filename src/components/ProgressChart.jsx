@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { collection, query, orderBy, getDocs, where } from 'firebase/firestore'
 import { db } from '../firebase'
 import { format, parseISO } from 'date-fns'
@@ -40,34 +40,6 @@ function ProgressChart({ refreshTrigger }) {
   })
   const { selectedPlan } = usePlan()
 
-  useEffect(() => {
-    if (selectedPlan) {
-      fetchWorkouts()
-    }
-  }, [refreshTrigger, selectedPlan])
-
-  const fetchWorkouts = async () => {
-    setLoading(true)
-    try {
-      const q = query(
-        collection(db, 'workouts'),
-        where('planId', '==', selectedPlan.id),
-        orderBy('date', 'asc')
-      )
-      const querySnapshot = await getDocs(q)
-      const workoutData = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }))
-      setWorkouts(workoutData)
-      calculateStats(workoutData)
-    } catch (error) {
-      console.error('Error fetching workouts:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
   const calculateStats = (workoutData) => {
     const totalWorkouts = workoutData.length
     const totalWeight = workoutData.reduce((sum, w) => sum + (w.totalWeight || 0), 0)
@@ -87,6 +59,34 @@ function ProgressChart({ refreshTrigger }) {
 
     setStats({ totalWorkouts, totalWeight, avgWeight, machineUses })
   }
+
+  const fetchWorkouts = useCallback(async () => {
+    if (!selectedPlan) return;
+    
+    setLoading(true)
+    try {
+      const q = query(
+        collection(db, 'workouts'),
+        where('planId', '==', selectedPlan.id),
+        orderBy('date', 'asc')
+      )
+      const querySnapshot = await getDocs(q)
+      const workoutData = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }))
+      setWorkouts(workoutData)
+      calculateStats(workoutData)
+    } catch (error) {
+      console.error('Error fetching workouts:', error)
+    } finally {
+      setLoading(false)
+    }
+  }, [selectedPlan])
+
+  useEffect(() => {
+    fetchWorkouts()
+  }, [fetchWorkouts, refreshTrigger])
 
   // Prepare data for total weight over time chart
   const weightOverTimeData = {

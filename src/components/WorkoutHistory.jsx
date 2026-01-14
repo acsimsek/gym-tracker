@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { collection, query, orderBy, getDocs, deleteDoc, doc, where } from 'firebase/firestore'
 import { db } from '../firebase'
 import { format, parseISO } from 'date-fns'
@@ -12,13 +12,9 @@ function WorkoutHistory({ refreshTrigger, onWorkoutDeleted }) {
   const [editingWorkout, setEditingWorkout] = useState(null)
   const { selectedPlan } = usePlan()
 
-  useEffect(() => {
-    if (selectedPlan) {
-      fetchWorkouts()
-    }
-  }, [refreshTrigger, selectedPlan])
-
-  const fetchWorkouts = async () => {
+  const fetchWorkouts = useCallback(async () => {
+    if (!selectedPlan) return;
+    
     setLoading(true)
     try {
       const q = query(
@@ -37,7 +33,11 @@ function WorkoutHistory({ refreshTrigger, onWorkoutDeleted }) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [selectedPlan])
+
+  useEffect(() => {
+    fetchWorkouts()
+  }, [fetchWorkouts, refreshTrigger])
 
   const handleDelete = async (workoutId) => {
     if (window.confirm('Are you sure you want to delete this workout?')) {

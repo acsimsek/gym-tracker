@@ -36,6 +36,11 @@ function WorkoutForm({ onWorkoutAdded }) {
     setMessage('')
 
     try {
+      // Check if a plan is selected
+      if (!selectedPlan) {
+        throw new Error('Please select a plan before adding a workout')
+      }
+
       // Validate machines
       const validMachines = machines.filter(m => 
         m.name && m.weight != null && m.weight !== '' && 

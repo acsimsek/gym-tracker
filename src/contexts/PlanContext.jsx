@@ -37,6 +37,14 @@ export const PlanProvider = ({ children }) => {
     }
   }, [user]);
 
+  // Helper function to select first plan
+  const selectFirstPlan = (plansList) => {
+    if (plansList.length > 0) {
+      setSelectedPlan(plansList[0]);
+      localStorage.setItem('selectedPlanId', plansList[0].id);
+    }
+  };
+
   // Load selected plan from localStorage
   useEffect(() => {
     if (plans.length > 0 && !selectedPlan) {
@@ -47,13 +55,11 @@ export const PlanProvider = ({ children }) => {
           setSelectedPlan(plan);
         } else {
           // If saved plan doesn't exist, select the first one
-          setSelectedPlan(plans[0]);
-          localStorage.setItem('selectedPlanId', plans[0].id);
+          selectFirstPlan(plans);
         }
       } else {
         // No saved plan, select the first one
-        setSelectedPlan(plans[0]);
-        localStorage.setItem('selectedPlanId', plans[0].id);
+        selectFirstPlan(plans);
       }
     }
   }, [plans, selectedPlan]);
