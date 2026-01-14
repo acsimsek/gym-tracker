@@ -93,16 +93,11 @@ export const PlanProvider = ({ children }) => {
         updatedAt: serverTimestamp()
       };
       const docRef = await addDoc(collection(db, 'plans'), newPlan);
-      const createdPlan = { id: docRef.id, ...newPlan, createdAt: new Date(), updatedAt: new Date() };
-      setPlans([...plans, createdPlan]);
       
-      // Auto-select the first plan created
-      if (plans.length === 0) {
-        setSelectedPlan(createdPlan);
-        localStorage.setItem('selectedPlanId', createdPlan.id);
-      }
+      // Reload plans to get correct server timestamps
+      await loadPlans();
       
-      return createdPlan;
+      return docRef.id;
     } catch (error) {
       console.error('Error creating plan:', error);
       throw error;
@@ -117,13 +112,8 @@ export const PlanProvider = ({ children }) => {
         updatedAt: serverTimestamp()
       });
       
-      setPlans(plans.map(p => 
-        p.id === planId ? { ...p, ...updates, updatedAt: new Date() } : p
-      ));
-      
-      if (selectedPlan?.id === planId) {
-        setSelectedPlan({ ...selectedPlan, ...updates, updatedAt: new Date() });
-      }
+      // Refetch plans to get the correct timestamps from Firestore
+      await loadPlans();
     } catch (error) {
       console.error('Error updating plan:', error);
       throw error;
@@ -133,19 +123,15 @@ export const PlanProvider = ({ children }) => {
   const deletePlan = async (planId) => {
     try {
       await deleteDoc(doc(db, 'plans', planId));
-      const newPlans = plans.filter(p => p.id !== planId);
-      setPlans(newPlans);
       
-      // If deleted plan was selected, select another plan
+      // If deleted plan was selected, clear selection before reload
       if (selectedPlan?.id === planId) {
-        if (newPlans.length > 0) {
-          setSelectedPlan(newPlans[0]);
-          localStorage.setItem('selectedPlanId', newPlans[0].id);
-        } else {
-          setSelectedPlan(null);
-          localStorage.removeItem('selectedPlanId');
-        }
+        setSelectedPlan(null);
+        localStorage.removeItem('selectedPlanId');
       }
+      
+      // Reload plans to maintain consistency
+      await loadPlans();
     } catch (error) {
       console.error('Error deleting plan:', error);
       throw error;
