@@ -3,12 +3,17 @@ import WorkoutForm from './components/WorkoutForm'
 import WorkoutHistory from './components/WorkoutHistory'
 import ProgressChart from './components/ProgressChart'
 import Login from './components/Login'
+import PlanSelector from './components/PlanSelector'
+import PlanManager from './components/PlanManager'
 import { useAuth } from './contexts/AuthContext'
+import { usePlan } from './contexts/PlanContext'
 
 function App() {
   const [activeTab, setActiveTab] = useState('add')
   const [refreshTrigger, setRefreshTrigger] = useState(0)
+  const [showPlanManager, setShowPlanManager] = useState(false)
   const { user, logout } = useAuth()
+  const { selectedPlan, loading: planLoading } = usePlan()
 
   const handleWorkoutAdded = () => {
     setRefreshTrigger(prev => prev + 1)
@@ -31,6 +36,55 @@ function App() {
     return <Login />
   }
 
+  // Show loading while plans are being fetched
+  if (planLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-blue-900 flex items-center justify-center">
+        <div className="text-white text-xl">⏳ Loading...</div>
+      </div>
+    )
+  }
+
+  // Show prompt if no plans exist
+  if (!selectedPlan) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-blue-900 py-8 px-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
+            <h1 className="text-4xl md:text-5xl font-bold text-white text-center md:text-left mb-4 md:mb-0">
+              💪 Gym Tracker
+            </h1>
+            
+            <button
+              onClick={handleLogout}
+              className="glass-effect text-white px-4 py-2 rounded-lg hover:bg-white/20 transition-all font-semibold text-sm"
+            >
+              🚪 Logout
+            </button>
+          </div>
+
+          <div className="card-glass rounded-xl p-8 text-center">
+            <div className="text-6xl mb-6">📋</div>
+            <h2 className="text-3xl font-bold text-white mb-4">Welcome to Gym Tracker!</h2>
+            <p className="text-white/80 text-lg mb-8">
+              Get started by creating your first workout plan.
+            </p>
+            <button
+              onClick={() => setShowPlanManager(true)}
+              className="px-8 py-4 rounded-lg bg-green-500 text-white hover:bg-green-600 transition-all font-semibold text-lg shadow-lg"
+            >
+              ➕ Create Your First Plan
+            </button>
+          </div>
+        </div>
+
+        {showPlanManager && (
+          <PlanManager onClose={() => setShowPlanManager(false)} />
+        )}
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-blue-900 py-8 px-4">
       <div className="max-w-6xl mx-auto">
@@ -40,6 +94,7 @@ function App() {
           </h1>
           
           <div className="flex flex-col sm:flex-row items-center gap-3">
+            <PlanSelector onManagePlans={() => setShowPlanManager(true)} />
             <span className="text-white/80 text-sm">
               {user.email}
             </span>
@@ -98,6 +153,10 @@ function App() {
           {activeTab === 'progress' && <ProgressChart refreshTrigger={refreshTrigger} />}
         </div>
       </div>
+
+      {showPlanManager && (
+        <PlanManager onClose={() => setShowPlanManager(false)} />
+      )}
     </div>
   )
 }
