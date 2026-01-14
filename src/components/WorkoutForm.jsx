@@ -3,7 +3,6 @@ import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '../firebase'
 import { format } from 'date-fns'
 import MachineEntry from './MachineEntry'
-import { usePlan } from '../contexts/PlanContext'
 
 function WorkoutForm({ onWorkoutAdded }) {
   const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'))
@@ -12,7 +11,6 @@ function WorkoutForm({ onWorkoutAdded }) {
   ])
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
-  const { selectedPlan } = usePlan()
 
   const handleAddMachine = () => {
     setMachines([...machines, { name: '', settings: '', weight: '', sets: '', reps: '' }])
@@ -36,11 +34,6 @@ function WorkoutForm({ onWorkoutAdded }) {
     setMessage('')
 
     try {
-      // Check if a plan is selected
-      if (!selectedPlan) {
-        throw new Error('Please select a plan before adding a workout')
-      }
-
       // Validate machines
       const validMachines = machines.filter(m => 
         m.name && m.weight != null && m.weight !== '' && 
@@ -68,7 +61,6 @@ function WorkoutForm({ onWorkoutAdded }) {
 
       // Add to Firestore
       await addDoc(collection(db, 'workouts'), {
-        planId: selectedPlan.id,
         date: date,
         machines: processedMachines,
         totalWeight: totalWeight,
