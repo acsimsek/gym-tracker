@@ -163,6 +163,37 @@ Once connected to GitHub, Vercel will automatically deploy:
 - **Production**: Every push to the `main` branch
 - **Preview**: Every push to other branches and pull requests
 
+## 📥 Importing Existing Workout Data
+
+If you have existing workout data in CSV format, you can import it using the CSV import script.
+
+### Quick Import
+
+```bash
+cd scripts
+npm install
+node import-csv.js path/to/your-workout-data.csv
+```
+
+### CSV Format
+
+Your CSV should have these columns:
+- `workout name` - Exercise/machine name
+- `workout settings` - Machine settings (optional)
+- `date` - Date in YYYY-MM-DD format
+- `weight kg` - Weight in kilograms
+- `sets` - Number of sets
+- `reps` - Number of reps
+
+Example:
+```csv
+workout name,workout settings,date,weight kg,sets,reps
+chest press,6,2024-06-09,22,2,10
+seated row,"s 5, c 6",2024-06-09,34,2,10
+```
+
+See `scripts/README.md` for detailed instructions, troubleshooting, and the sample CSV file.
+
 ## 🗄️ Database Structure
 
 The app uses a single Firestore collection:
