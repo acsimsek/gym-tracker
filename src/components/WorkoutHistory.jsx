@@ -1,23 +1,39 @@
 import { useState, useEffect } from 'react'
-import { collection, query, orderBy, getDocs, deleteDoc, doc } from 'firebase/firestore'
+import { collection, query, orderBy, getDocs, deleteDoc, doc, where } from 'firebase/firestore'
 import { db } from '../firebase'
 import { format, parseISO } from 'date-fns'
 import EditWorkoutForm from './EditWorkoutForm'
+import { usePlans } from '../contexts/PlanContext'
+import { useAuth } from '../contexts/AuthContext'
 
 function WorkoutHistory({ refreshTrigger, onWorkoutDeleted }) {
   const [workouts, setWorkouts] = useState([])
   const [loading, setLoading] = useState(true)
   const [expandedWorkout, setExpandedWorkout] = useState(null)
   const [editingWorkout, setEditingWorkout] = useState(null)
+  const { selectedPlan } = usePlans()
+  const { user } = useAuth()
 
   useEffect(() => {
-    fetchWorkouts()
-  }, [refreshTrigger])
+    if (selectedPlan) {
+      fetchWorkouts()
+    } else {
+      setWorkouts([])
+      setLoading(false)
+    }
+  }, [refreshTrigger, selectedPlan])
 
   const fetchWorkouts = async () => {
+    if (!selectedPlan) return
+    
     setLoading(true)
     try {
-      const q = query(collection(db, 'workouts'), orderBy('date', 'desc'))
+      const q = query(
+        collection(db, 'workouts'),
+        where('planId', '==', selectedPlan.id),
+        where('userId', '==', user.uid),
+        orderBy('date', 'desc')
+      )
       const querySnapshot = await getDocs(q)
       const workoutData = querySnapshot.docs.map(doc => ({
         id: doc.id,
@@ -76,11 +92,20 @@ function WorkoutHistory({ refreshTrigger, onWorkoutDeleted }) {
     )
   }
 
+  if (!selectedPlan) {
+    return (
+      <div className="text-center py-12">
+        <div className="text-white text-xl mb-4">📋 Select a Plan</div>
+        <div className="text-white/70">Choose a plan from the dropdown above to view its workout history</div>
+      </div>
+    )
+  }
+
   if (workouts.length === 0) {
     return (
       <div className="text-center py-12">
         <div className="text-white text-xl mb-4">📭 No workouts yet</div>
-        <div className="text-white/70">Add your first workout to get started!</div>
+        <div className="text-white/70">Add your first workout to "{selectedPlan.name}" to get started!</div>
       </div>
     )
   }
@@ -88,6 +113,12 @@ function WorkoutHistory({ refreshTrigger, onWorkoutDeleted }) {
   return (
     <div>
       <h2 className="text-2xl font-bold text-white mb-6">Workout History</h2>
+      
+      {/* Show selected plan */}
+      <div className="mb-6 glass-effect rounded-lg p-4">
+        <div className="text-white/70 text-sm">Showing workouts for:</div>
+        <div className="text-white font-semibold text-lg">📋 {selectedPlan.name}</div>
+      </div>
       
       <div className="space-y-4">
         {workouts.map((workout) => {
