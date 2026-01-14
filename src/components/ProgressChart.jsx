@@ -101,19 +101,28 @@ function ProgressChart({ refreshTrigger }) {
     ]
   }
 
-  // Prepare data for average weight per machine chart
-  const machineNames = Object.keys(stats.machineUses)
-  const avgWeightPerMachine = machineNames.map(name => {
-    const { count, totalWeight } = stats.machineUses[name]
-    return totalWeight / count
-  })
-
-  const avgWeightPerMachineData = {
-    labels: machineNames,
+  // Prepare data for average weight per day chart
+  const avgWeightPerDayData = {
+    labels: workouts.map(w => {
+      try {
+        return w.date ? format(parseISO(w.date), 'MMM dd') : 'Unknown'
+      } catch {
+        return w.date || 'Unknown'
+      }
+    }),
     datasets: [
       {
-        label: 'Average Weight per Session (kg)',
-        data: avgWeightPerMachine,
+        label: 'Average Weight per Day (kg)',
+        data: workouts.map(w => {
+          // Calculate average weight across all machines for this workout
+          if (!w.machines || w.machines.length === 0) return 0
+          const validWeights = w.machines
+            .map(m => parseFloat(m.weight))
+            .filter(weight => !isNaN(weight) && weight > 0)
+          if (validWeights.length === 0) return 0
+          const totalWeight = validWeights.reduce((sum, weight) => sum + weight, 0)
+          return totalWeight / validWeights.length
+        }),
         backgroundColor: 'rgba(59, 130, 246, 0.7)',
         borderColor: 'rgb(59, 130, 246)',
         borderWidth: 2
@@ -122,6 +131,7 @@ function ProgressChart({ refreshTrigger }) {
   }
 
   // Prepare data for most used machines chart
+  const machineNames = Object.keys(stats.machineUses)
   const machineCounts = machineNames.map(name => stats.machineUses[name].count)
   const mostUsedMachinesData = {
     labels: machineNames,
@@ -224,15 +234,13 @@ function ProgressChart({ refreshTrigger }) {
           </div>
         </div>
 
-        {/* Average Weight Per Machine */}
-        {machineNames.length > 0 && (
-          <div className="glass-effect rounded-lg p-6">
-            <h3 className="text-white font-semibold text-lg mb-4">Average Weight Per Machine</h3>
-            <div className="bg-white/5 rounded-lg p-4">
-              <Bar data={avgWeightPerMachineData} options={chartOptions} />
-            </div>
+        {/* Average Weight Per Day */}
+        <div className="glass-effect rounded-lg p-6">
+          <h3 className="text-white font-semibold text-lg mb-4">📊 Average Weight per Day</h3>
+          <div className="bg-white/5 rounded-lg p-4">
+            <Bar data={avgWeightPerDayData} options={chartOptions} />
           </div>
-        )}
+        </div>
 
         {/* Most Used Machines */}
         {machineNames.length > 0 && (
