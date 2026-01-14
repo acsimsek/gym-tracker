@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { collection, query, orderBy, getDocs, where } from 'firebase/firestore'
+import { collection, query, orderBy, getDocs } from 'firebase/firestore'
 import { db } from '../firebase'
 import { format, parseISO } from 'date-fns'
 import {
@@ -15,8 +15,6 @@ import {
   Filler
 } from 'chart.js'
 import { Line, Bar } from 'react-chartjs-2'
-import { usePlans } from '../contexts/PlanContext'
-import { useAuth } from '../contexts/AuthContext'
 
 ChartJS.register(
   CategoryScale,
@@ -39,29 +37,15 @@ function ProgressChart({ refreshTrigger }) {
     avgWeight: 0,
     machineUses: {}
   })
-  const { selectedPlan } = usePlans()
-  const { user } = useAuth()
 
   useEffect(() => {
-    if (selectedPlan) {
-      fetchWorkouts()
-    } else {
-      setWorkouts([])
-      setLoading(false)
-    }
-  }, [refreshTrigger, selectedPlan])
+    fetchWorkouts()
+  }, [refreshTrigger])
 
   const fetchWorkouts = async () => {
-    if (!selectedPlan) return
-    
     setLoading(true)
     try {
-      const q = query(
-        collection(db, 'workouts'),
-        where('planId', '==', selectedPlan.id),
-        where('userId', '==', user.uid),
-        orderBy('date', 'asc')
-      )
+      const q = query(collection(db, 'workouts'), orderBy('date', 'asc'))
       const querySnapshot = await getDocs(q)
       const workoutData = querySnapshot.docs.map(doc => ({
         id: doc.id,
@@ -207,20 +191,11 @@ function ProgressChart({ refreshTrigger }) {
     )
   }
 
-  if (!selectedPlan) {
-    return (
-      <div className="text-center py-12">
-        <div className="text-white text-xl mb-4">📋 Select a Plan</div>
-        <div className="text-white/70">Choose a plan from the dropdown above to view its progress</div>
-      </div>
-    )
-  }
-
   if (workouts.length === 0) {
     return (
       <div className="text-center py-12">
         <div className="text-white text-xl mb-4">📊 No data yet</div>
-        <div className="text-white/70">Add some workouts to "{selectedPlan.name}" to see your progress!</div>
+        <div className="text-white/70">Add some workouts to see your progress!</div>
       </div>
     )
   }
@@ -228,12 +203,6 @@ function ProgressChart({ refreshTrigger }) {
   return (
     <div>
       <h2 className="text-2xl font-bold text-white mb-6">Progress & Statistics</h2>
-
-      {/* Show selected plan */}
-      <div className="mb-6 glass-effect rounded-lg p-4">
-        <div className="text-white/70 text-sm">Showing progress for:</div>
-        <div className="text-white font-semibold text-lg">📋 {selectedPlan.name}</div>
-      </div>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">

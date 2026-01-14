@@ -3,8 +3,6 @@ import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '../firebase'
 import { format } from 'date-fns'
 import MachineEntry from './MachineEntry'
-import { usePlans } from '../contexts/PlanContext'
-import { useAuth } from '../contexts/AuthContext'
 
 function WorkoutForm({ onWorkoutAdded }) {
   const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'))
@@ -13,8 +11,6 @@ function WorkoutForm({ onWorkoutAdded }) {
   ])
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
-  const { selectedPlan } = usePlans()
-  const { user } = useAuth()
 
   const handleAddMachine = () => {
     setMachines([...machines, { name: '', settings: '', weight: '', sets: '', reps: '' }])
@@ -38,10 +34,6 @@ function WorkoutForm({ onWorkoutAdded }) {
     setMessage('')
 
     try {
-      if (!selectedPlan) {
-        throw new Error('Please select a plan first')
-      }
-
       // Validate machines
       const validMachines = machines.filter(m => 
         m.name && m.weight != null && m.weight !== '' && 
@@ -67,10 +59,8 @@ function WorkoutForm({ onWorkoutAdded }) {
         sum + (m.weight * m.sets * m.reps), 0
       )
 
-      // Add to Firestore with planId
+      // Add to Firestore
       await addDoc(collection(db, 'workouts'), {
-        planId: selectedPlan.id,
-        userId: user.uid,
         date: date,
         machines: processedMachines,
         totalWeight: totalWeight,
@@ -99,14 +89,6 @@ function WorkoutForm({ onWorkoutAdded }) {
   return (
     <div>
       <h2 className="text-2xl font-bold text-white mb-6">Add New Workout</h2>
-      
-      {/* Show selected plan indicator */}
-      {selectedPlan && (
-        <div className="mb-6 glass-effect rounded-lg p-4">
-          <div className="text-white/70 text-sm">Adding workout to:</div>
-          <div className="text-white font-semibold text-lg">📋 {selectedPlan.name}</div>
-        </div>
-      )}
       
       <form onSubmit={handleSubmit}>
         <div className="mb-6">
