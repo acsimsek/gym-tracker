@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
-import { collection, query, orderBy, getDocs } from 'firebase/firestore'
+import { collection, query, orderBy, getDocs, where } from 'firebase/firestore'
 import { db } from '../firebase'
 import { format, parseISO } from 'date-fns'
+import { usePlan } from '../contexts/PlanContext'
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -37,15 +38,22 @@ function ProgressChart({ refreshTrigger }) {
     avgWeight: 0,
     machineUses: {}
   })
+  const { selectedPlan } = usePlan()
 
   useEffect(() => {
-    fetchWorkouts()
-  }, [refreshTrigger])
+    if (selectedPlan) {
+      fetchWorkouts()
+    }
+  }, [refreshTrigger, selectedPlan])
 
   const fetchWorkouts = async () => {
     setLoading(true)
     try {
-      const q = query(collection(db, 'workouts'), orderBy('date', 'asc'))
+      const q = query(
+        collection(db, 'workouts'),
+        where('planId', '==', selectedPlan.id),
+        orderBy('date', 'asc')
+      )
       const querySnapshot = await getDocs(q)
       const workoutData = querySnapshot.docs.map(doc => ({
         id: doc.id,
